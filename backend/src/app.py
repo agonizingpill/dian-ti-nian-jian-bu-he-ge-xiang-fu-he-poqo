@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .casework_routes import router as operational_cases
 from .operations_evidence import router as operations_evidence
+from .weekly_routes import router as weekly_leaf_report
 from .auth import create_token, current_user, hash_password, require_roles
 from .db import connection, init_schema
 from .middlewares.request_context import AuditRequestMiddleware
@@ -29,6 +30,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="电梯年检不合格项复核", version="1.0.0", lifespan=lifespan)
 app.include_router(operational_cases)
 app.include_router(operations_evidence)
+app.include_router(weekly_leaf_report)
 app.add_middleware(AuditRequestMiddleware)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -70,6 +72,18 @@ def execute(sql, params=()):
 def ensure_lift_access(lift_id: int):
     if not fetch_lift(lift_id):
         raise HTTPException(404, "电梯档案不存在")
+
+
+def _same_features(stored, current):
+    """MySQL may hand JSON back as dict/list/str; compare normalized values."""
+    if isinstance(stored, (bytes, bytearray)):
+        stored = stored.decode("utf-8", "strict")
+    if isinstance(stored, str):
+        try:
+            stored = json.loads(stored)
+        except (TypeError, ValueError):
+            return False
+    return stored == current
 
 
 @app.get("/api/health")
@@ -180,11 +194,34 @@ def enqueue_review(lift_id: int, user=Depends(require_roles("operator", "supervi
         "failed_item_count": sum(1 for x in items if x["result"] == "fail"),
         "documentation_gap": sum(1 for x in items if x["category"] == "documentation" and x["result"] == "fail"),
     }
-    job_id = execute("INSERT INTO analysis_jobs(lift_id,status,features_json) VALUES(%s,'queued',%s)", (lift_id, json.dumps(features)))
+    # A new order supersedes the previous completed review for this lift: retries
+    # of the *same* order reuse its acceptance time so they count once.
+    previous = row(
+        """SELECT id,accepted_at,status,retry_of,attempt_count FROM analysis_jobs
+           WHERE lift_id=%s ORDER BY id DESC LIMIT 1""",
+        (lift_id,),
+    )
+    accepted_at = datetime.utcnow()
+    retry_of = None
+    attempt_count = 0
+    if previous and previous["status"] in {"queued", "running"}:
+        raise HTTPException(409, "该电梯已有复核任务在处理中")
+    if previous and previous["status"] == "failed" and _same_features(previous["features_json"], features):
+        # The same order is re-run after a worker failure: reuse the root
+        # acceptance time and keep a single count for the whole retry chain.
+        retry_of = int(previous["retry_of"] or previous["id"])
+        attempt_count = int(previous["attempt_count"] or 0) + 1
+        root = row("SELECT accepted_at,created_at FROM analysis_jobs WHERE id=%s", (retry_of,))
+        accepted_at = (root and (root["accepted_at"] or root["created_at"])) or accepted_at
+    job_id = execute(
+        """INSERT INTO analysis_jobs(lift_id,status,features_json,accepted_at,retry_of,attempt_count)
+           VALUES(%s,'queued',%s,%s,%s,%s)""",
+        (lift_id, json.dumps(features), accepted_at, retry_of, attempt_count),
+    )
     redis_client.lpush("lift_analysis", str(job_id))
     execute("UPDATE lifts SET status='under_review' WHERE id=%s", (lift_id,))
-    log_action(int(user["sub"]), "enqueue_review", "analysis_job", job_id, {"lift_id": lift_id, "features": features})
-    return {"job_id": job_id, "status": "queued", "features": features}
+    log_action(int(user["sub"]), "enqueue_review", "analysis_job", job_id, {"lift_id": lift_id, "features": features, "retry_of": retry_of})
+    return {"job_id": job_id, "status": "queued", "features": features, "retry_of": retry_of, "accepted_at": accepted_at.isoformat(sep=" ")}
 
 
 @app.get("/api/lifts/{lift_id}/analysis")

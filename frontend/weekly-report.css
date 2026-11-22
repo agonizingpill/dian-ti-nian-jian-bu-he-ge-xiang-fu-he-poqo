@@ -1,0 +1,45 @@
+#weekly-report-open {position:fixed; right:1.25rem; bottom:8rem; z-index:25; border-radius:.55rem;
+  background:#2c3f68; color:white; border:1px solid #40578a; padding:.65rem .9rem; cursor:pointer}
+#weekly-report-open[hidden] {display:none}
+#weekly-report {width:min(70rem, calc(100% - 1.5rem)); max-height:calc(100% - 2rem); overflow:auto;
+  border:1px solid #9aa8c8; border-radius:.9rem; padding:1.4rem; background:#f7f8fc; color:#1c2740;
+  font:inherit; box-shadow:0 1.2rem 4rem #000f2340}
+#weekly-report::backdrop {background:#11203ac4}
+#weekly-report header {display:flex; align-items:center; justify-content:space-between; gap:1rem}
+#weekly-report h2, #weekly-report h3, #weekly-report h4 {margin:.35rem 0 .75rem; color:#1c2740}
+#weekly-report .weekly-controls {display:flex; flex-wrap:wrap; gap:.65rem; align-items:end; padding:.6rem 0}
+#weekly-report .weekly-controls label {display:flex; flex-direction:column; gap:.3rem; font-size:.85rem; color:#4a5878}
+#weekly-report button, #weekly-report select, #weekly-report input {font:inherit; color:inherit;
+  border:1px solid #9aa8c8; border-radius:.4rem; background:white; padding:.45rem .65rem; min-height:2.2rem}
+#weekly-report button {cursor:pointer; background:#e9edf7}
+#weekly-report button.weekly-freeze {background:#2c3f68; color:white}
+#weekly-report button:disabled {opacity:.45; cursor:not-allowed}
+#weekly-report [role=status] {color:#3a4a72; min-height:1.35rem; margin:.35rem 0}
+#weekly-report .weekly-summary {display:flex; flex-wrap:wrap; gap:1rem; align-items:baseline;
+  padding:.7rem .9rem; background:#e9edf7; border-radius:.5rem; margin-bottom:.9rem}
+#weekly-report .weekly-summary strong {font-size:1.05rem}
+#weekly-report .weekly-summary span {font-size:.9rem; color:#3a4a72}
+#weekly-report .weekly-table {width:100%; border-collapse:collapse; font-size:.9rem; background:white}
+#weekly-report .weekly-table th, #weekly-report .weekly-table td {padding:.45rem .55rem;
+  text-align:left; border-bottom:1px solid #d7ddec; vertical-align:top}
+#weekly-report .weekly-table th {background:#e2e7f3; color:#26355a}
+#weekly-report .weekly-table td small {display:block; color:#6b7799; margin-top:.15rem; font-size:.78rem}
+#weekly-report .weekly-table .unknown-row {background:#fdf6e7}
+#weekly-report .weekly-bar {height:.7rem; background:#eef1f8; border-radius:99px; overflow:hidden; min-width:5rem}
+#weekly-report .weekly-bar i {display:block; height:100%; background:#2c3f68}
+#weekly-report .weekly-lifts {display:grid; gap:.5rem}
+#weekly-report .weekly-lifts details {background:#fff; border:1px solid #d7ddec; border-radius:.5rem; padding:.55rem .75rem}
+#weekly-report .weekly-lifts summary {cursor:pointer; display:flex; flex-wrap:wrap; gap:.8rem; align-items:baseline}
+#weekly-report .weekly-lifts summary span {font-size:.82rem; color:#4a5878}
+#weekly-report .weekly-lifts ol {list-style:none; margin:.6rem 0 0; padding:0; display:grid; gap:.4rem}
+#weekly-report .weekly-lifts li {padding:.5rem .7rem; border-left:.22rem solid #9aa8c8; background:#f3f5fb}
+#weekly-report .weekly-lifts li.counted {border-left-color:#2c7a5b; background:#eef7f1}
+#weekly-report .weekly-lifts li p {margin:.25rem 0; font-size:.85rem}
+#weekly-report .weekly-lifts li small {color:#6b7799; font-size:.78rem}
+#weekly-report .weekly-compare {margin:1.1rem 0; padding:.9rem; background:#fff; border:1px solid #d7ddec; border-radius:.6rem}
+#weekly-report .weekly-compare p {margin:.2rem 0 .7rem; font-size:.86rem; color:#4a5878}
+#weekly-report .weekly-compare p small {display:block; margin-top:.2rem; color:#6b7799}
+#weekly-report .weekly-compare td.changed {font-weight:700; color:#9a5a00}
+#weekly-report .weekly-compare td.up {color:#8a3f2f; font-weight:700}
+#weekly-report .weekly-compare td.down {color:#2c7a5b; font-weight:700}
+#weekly-report .weekly-compare td.flat {color:#8a93aa}
